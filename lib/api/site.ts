@@ -1,12 +1,59 @@
 import { v2 as cloudinary } from "cloudinary";
 import prisma from "@/lib/prisma";
+import { getBlurDataURL } from "@/lib/utils";
+import mql from "@microlink/mql";
 
-cloudinary.config({
-  cloud_name: "owd-assets",
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: false,
-});
+const PAGINATION_LIMIT = 20;
+
+export interface SiteProps {
+  id: string;
+  domain: string;
+  thumbnail: string;
+  blurDataURL: string;
+}
+
+export async function getSites(
+  industry?: string | null,
+  size?: string | null,
+  page?: string | null
+) {
+  const sites = await prisma.site.findMany({
+    where: {
+      NOT: {
+        thumbnail: null,
+      },
+    },
+    select: {
+      id: true,
+      domain: true,
+      thumbnail: true,
+    },
+    orderBy: {
+      opr: "asc",
+    },
+    take: PAGINATION_LIMIT,
+    skip: page ? PAGINATION_LIMIT * (parseInt(page) - 1) : 0,
+  });
+  return (await Promise.all(
+    sites.map(async (site) => ({
+      ...site,
+      blurDataURL: await getBlurDataURL(site.thumbnail),
+    }))
+  )) as SiteProps[];
+}
+
+export async function addSite(site: string, rank: number) {
+  return await prisma.site.upsert({
+    where: {
+      domain: site,
+    },
+    update: { opr: rank },
+    create: {
+      domain: site,
+      opr: rank,
+    },
+  });
+}
 
 export async function getSiteOPRank(site: string) {
   const data = await fetch(
@@ -19,6 +66,7 @@ export async function getSiteOPRank(site: string) {
       },
     }
   ).then((res) => res.json());
+  console.log(data);
   const rank =
     data.status_code === 200 && data.response[0].status_code === 200
       ? parseInt(data.response[0].rank)
@@ -26,36 +74,37 @@ export async function getSiteOPRank(site: string) {
   return rank;
 }
 
-export async function updateSiteThumbnail(site: string, id: string) {
+export async function getScreenshot(url: string) {
+  const { data } = await mql(`https://${url}`, {
+    apiKey: process.env.MICROLINK_API_KEY,
+    screenshot: true,
+    force: true,
+  });
+  return data.screenshot?.url;
+}
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: false,
+});
+
+export async function updateSiteThumbnail(screenshot: string, id: string) {
   await cloudinary.uploader.upload(
-    `https://api.microlink.io/?url=https://${site}&screenshot=true&meta=false&embed=screenshot.url&waitForTimeout=2000`,
+    screenshot,
     {
       use_filename: true,
       unique_filename: false,
       filename_override: id,
     },
     async function (error, result) {
-      console.log(result, error);
       if (result && !error) {
         await prisma.site.update({
-          where: { domain: site },
-          data: {
-            thumbnail: result.secure_url,
-          },
+          where: { id },
+          data: { thumbnail: result.secure_url },
         });
       }
     }
   );
-}
-
-export async function addSite(site: string) {
-  return await prisma.site.upsert({
-    where: {
-      domain: site,
-    },
-    update: {},
-    create: {
-      domain: site,
-    },
-  });
 }

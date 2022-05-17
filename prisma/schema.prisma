@@ -5,13 +5,27 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-    previewFeatures = ["mongoDb"]
+  previewFeatures = ["mongoDb"]
 }
 
 model Site {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  domain      String    @unique
+  thumbnail   String?
+  opr         Int?
+  industry    Industry[] @relation(fields: [industryIds], references: [id])
+  industryIds String[]   @db.ObjectId
+  size        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Industry {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  domain    String    @unique
-  thumbnail String?
+  name      String
+  slug      String    @unique
+  sites     Site[]    @relation(fields: [siteIds], references: [id])
+  siteIds   String[]  @db.ObjectId
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
