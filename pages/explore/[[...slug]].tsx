@@ -41,7 +41,7 @@ export default function Explore({ sites }: ExplorePageProps) {
   });
   useEffect(() => {
     if (observer?.isIntersecting) {
-      void setSize(size + 1);
+      setSize(size + 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [observer?.isIntersecting]);
@@ -56,8 +56,8 @@ export default function Explore({ sites }: ExplorePageProps) {
           {data.map((site) => (
             <SiteCard key={site.id} site={site} />
           ))}
-          <div ref={ref} />
         </div>
+        <div ref={ref} className="bg-red-500 h-10 w-full" />
       </div>
     </Layout>
   );
