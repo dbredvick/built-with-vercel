@@ -1,49 +1,35 @@
 import Layout from "@/components/layout";
 import Filters from "@/components/filters";
-import SiteCard from "@/components/site-card";
-import useSWRInfinite from "swr/infinite";
-import { useEffect, useMemo, useRef } from "react";
-import fetcher from "@/lib/fetcher";
+import SiteCardGrid from "@/components/site-card-grid";
+import { useEffect, useState, useRef } from "react";
 import { useIntersectionObserver } from "@/lib/hooks/use-intersection-observer";
 import { getSites } from "@/lib/api/site";
 import type { GetStaticProps, GetStaticPaths } from "next";
 import type { SiteProps } from "@/lib/api/site";
+import type { ReactElement } from "react";
 
 interface ExplorePageProps {
-  sites: SiteProps[][];
+  sites: SiteProps[];
 }
 
 export default function Explore({ sites }: ExplorePageProps) {
-  const {
-    data: rawData,
-    size,
-    setSize,
-  } = useSWRInfinite<SiteProps[]>(
-    (index) => `/api/site?page=${index + 1}`,
-    fetcher,
-    {
-      fallbackData: sites,
-      keepPreviousData: true,
-    }
-  );
+  const [page, setPage] = useState(1);
 
-  const data = useMemo<SiteProps[]>(() => {
-    return rawData
-      ? ([] as SiteProps[]).concat(...rawData)
-      : ([] as SiteProps[]);
-  }, [rawData]);
+  const grids: ReactElement[] = [];
+  for (let i = 0; i < page; i++) {
+    grids.push(<SiteCardGrid key={i} idx={i} sites={sites} />);
+  }
 
   // intersection observer
   const ref = useRef(null);
   const observer = useIntersectionObserver(ref, {
     threshold: 0.1,
-    rootMargin: "2000px 0px 2000px 0px",
   });
   useEffect(() => {
     if (observer?.isIntersecting) {
-      setSize(size + 1);
+      console.log("intersecting", "page:", page);
+      setPage((currentPage) => currentPage + 1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [observer?.isIntersecting]);
 
   return (
@@ -52,12 +38,10 @@ export default function Explore({ sites }: ExplorePageProps) {
         <div className="hidden lg:block lg:col-span-1 sticky top-20 self-start">
           <Filters />
         </div>
-        <div className="col-span-4 lg:col-span-3 grid grid-cols-4 gap-3">
-          {data.map((site) => (
-            <SiteCard key={site.id} site={site} />
-          ))}
+        <div className="col-span-4 lg:col-span-3">
+          <div className="grid grid-cols-4 gap-3">{grids}</div>
+          <div ref={ref} />
         </div>
-        <div ref={ref} className="bg-red-500 h-10 w-full" />
       </div>
     </Layout>
   );
@@ -79,11 +63,11 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps<
   ExplorePageProps,
   { slug: string[] }
-> = async (context) => {
-  const data = await getSites();
+> = async () => {
+  const sites = await getSites();
   return {
     props: {
-      sites: [data],
+      sites,
     },
   };
 };

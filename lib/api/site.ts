@@ -1,9 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import prisma from "@/lib/prisma";
 import { getBlurDataURL } from "@/lib/utils";
+import { PAGINATION_LIMIT } from "@/lib/constants";
 import mql from "@microlink/mql";
-
-const PAGINATION_LIMIT = 20;
 
 export interface SiteProps {
   id: string;
@@ -32,7 +31,7 @@ export async function getSites(
       opr: "asc",
     },
     take: PAGINATION_LIMIT,
-    skip: page ? PAGINATION_LIMIT * (parseInt(page) - 1) : 0,
+    skip: page ? PAGINATION_LIMIT * parseInt(page) : 0,
   });
   return (await Promise.all(
     sites.map(async (site) => ({
