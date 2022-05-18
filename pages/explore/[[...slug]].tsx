@@ -27,7 +27,6 @@ export default function Explore({ sites }: ExplorePageProps) {
   });
   useEffect(() => {
     if (observer?.isIntersecting) {
-      console.log("intersecting", "page:", page);
       setPage((currentPage) => currentPage + 1);
     }
   }, [observer?.isIntersecting]);
