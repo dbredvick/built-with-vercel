@@ -33,12 +33,20 @@ export default function Explore({ sites }: ExplorePageProps) {
 
   return (
     <Layout>
-      <div className="max-w-screen-xl mx-auto my-20 grid grid-cols-4">
+      <div className="mx-auto">
+        <h1 className="text-center text-5xl tracking-tight font-bold text-gray-900 sm:text-6xl md:text-7xl">
+          Built with Vercel
+        </h1>
+        <p className="text-center text-xl text-gray-500 my-8">
+          A directory of sites hosted with Vercel, searchable and filterable.
+        </p>
+      </div>
+      <div className="max-w-screen-lg mx-auto my-14 grid grid-cols-4">
         <div className="hidden lg:block lg:col-span-1 sticky top-20 self-start">
           <Filters />
         </div>
         <div className="col-span-4 lg:col-span-3">
-          <div className="grid grid-cols-4 gap-3">{grids}</div>
+          <div className="grid grid-cols-3 gap-3">{grids}</div>
           <div ref={ref} />
         </div>
       </div>
