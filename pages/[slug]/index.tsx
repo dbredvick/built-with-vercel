@@ -3,22 +3,32 @@ import Filters from "@/components/filters";
 import SiteCardGrid from "@/components/site-card-grid";
 import { useEffect, useState, useRef } from "react";
 import { useIntersectionObserver } from "@/lib/hooks/use-intersection-observer";
-import { getCategories, getSites } from "@/lib/api/site";
+import { getSites, getCategories } from "@/lib/api/site";
 import type { GetStaticProps, GetStaticPaths } from "next";
-import type { SiteProps } from "@/lib/api/site";
+import type { SiteProps, IndustryProps } from "@/lib/api/site";
 import type { ReactElement } from "react";
+import { useRouter } from "next/router";
 
 interface ExplorePageProps {
   sites: SiteProps[];
-  categories: { id: string; name: string; slug: string }[];
+  categories: IndustryProps[];
 }
 
 export default function Explore({ sites, categories }: ExplorePageProps) {
+  const router = useRouter();
   const [page, setPage] = useState(1);
+  console.log(categories);
 
   const grids: ReactElement[] = [];
   for (let i = 0; i < page; i++) {
-    grids.push(<SiteCardGrid key={i} idx={i} sites={sites} />);
+    grids.push(
+      <SiteCardGrid
+        key={i}
+        idx={i}
+        sites={sites}
+        industrySlug={router.query.slug as string}
+      />
+    );
   }
 
   // intersection observer
@@ -57,14 +67,29 @@ export default function Explore({ sites, categories }: ExplorePageProps) {
 
 export const getStaticProps: GetStaticProps<
   ExplorePageProps,
-  { slug: string[] }
-> = async () => {
-  const sites = await getSites();
+  { slug: string }
+> = async (ctx) => {
+  const sites = await getSites(ctx.params?.slug);
   const categories = await getCategories();
   return {
     props: {
       sites,
       categories,
     },
+  };
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const categories = await getCategories();
+
+  const paths = categories.map((category) => ({
+    params: {
+      slug: category.slug,
+    },
+  }));
+
+  return {
+    paths,
+    fallback: false,
   };
 };

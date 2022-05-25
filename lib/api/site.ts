@@ -11,17 +11,27 @@ export interface SiteProps {
   blurDataURL: string;
 }
 
+export interface IndustryProps {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export async function getSites(
-  industry?: string | null,
+  industrySlug?: string | null,
   size?: string | null,
   page?: string | null
 ) {
+  const clause = industrySlug
+    ? {
+        industry: {
+          some: { slug: industrySlug },
+        },
+      }
+    : { NOT: { thumbnail: null } };
+
   const sites = await prisma.site.findMany({
-    where: {
-      NOT: {
-        thumbnail: null,
-      },
-    },
+    where: clause,
     select: {
       id: true,
       domain: true,
@@ -39,6 +49,32 @@ export async function getSites(
       blurDataURL: await getBlurDataURL(site.thumbnail),
     }))
   )) as SiteProps[];
+}
+
+export async function setup() {
+  await prisma.industry.create({
+    data: {
+      name: "Dev Tools",
+      slug: "dev-tools",
+      sites: {
+        connect: {
+          id: "6282eaaf10820ee749416d2e",
+        },
+      },
+    },
+  });
+}
+
+export async function getCategories() {
+  const sites = await prisma.industry.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+  });
+
+  return sites;
 }
 
 export async function addSite(site: string, rank: number) {
