@@ -1,24 +1,20 @@
+import { IndustryProps } from "@/lib/api/site";
 import { useRouter } from "next/router";
-
-const filters = [
-  { label: "Software", term: "software" },
-  { label: "Ecommerce", term: "ecommerce" },
-  { label: "Finance", term: "finance" },
-  { label: "Media", term: "media" },
-  { label: "Government", term: "government" },
-  { label: "Something Else", term: "other" },
-];
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Filters() {
+export default function Filters({
+  categories,
+}: {
+  categories: IndustryProps[];
+}) {
   const router = useRouter();
-  const currTerm = router.query.search;
+  const currTerm = router.query.slug;
 
   const handleClick = (term: string) => {
-    router.push(`?search=${term}`, undefined, { shallow: true });
+    router.push(`/${term}`, undefined, { shallow: true });
   };
 
   const handleClear = () => {
@@ -47,12 +43,12 @@ export default function Filters() {
         <fieldset>
           <legend className="my-4 text-sm font-semibold">Industry</legend>
           <div className="space-y-2">
-            {filters.map((filter) => (
+            {categories.map((filter) => (
               <div
-                key={filter.term}
-                onClick={() => handleClick(filter.term)}
+                key={filter.slug}
+                onClick={() => handleClick(filter.slug)}
                 className={classNames(
-                  currTerm === filter.term
+                  currTerm === filter.slug
                     ? "text-gray-800 bg-[#fafafa]"
                     : "text-gray-500 hover:bg-[#fafafa]",
                   "relative p-3 rounded cursor-pointer flex items-start"
@@ -60,17 +56,17 @@ export default function Filters() {
               >
                 <div className="flex items-center h-5 pl-1">
                   <input
-                    id={filter.term}
-                    aria-describedby={`${filter.term}-description`}
+                    id={filter.slug}
+                    aria-describedby={`${filter.slug}-description`}
                     name="filter"
                     type="radio"
-                    checked={filter.term === currTerm}
+                    checked={filter.slug === currTerm}
                     className="  focus:ring-indigo-500 h-4 w-4 border-gray-300"
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor={filter.term} className="">
-                    {filter.label}
+                  <label htmlFor={filter.slug} className="">
+                    {filter.name}
                   </label>
                 </div>
               </div>
